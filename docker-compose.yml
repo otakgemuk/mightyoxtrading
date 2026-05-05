@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: prop-firms-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-prop_firms_db}
+      MYSQL_USER: ${DB_USER:-prop_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secure_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - prop-firms-network
+
+  # Node.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prop-firms-app
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-mysql://${DB_USER:-prop_user}:${DB_PASSWORD:-secure_password}@mysql:3306/${DB_NAME:-prop_firms_db}}
+      APP_ID: ${APP_ID:-kimi-prop-firms}
+      APP_SECRET: ${APP_SECRET:-your-secret-key-change-this}
+      VITE_KIMI_AUTH_URL: ${VITE_KIMI_AUTH_URL:-http://localhost:5173}
+      VITE_APP_ID: ${VITE_APP_ID:-kimi-prop-firms}
+      KIMI_AUTH_URL: ${KIMI_AUTH_URL:-http://localhost:5173}
+      KIMI_OPEN_URL: ${KIMI_OPEN_URL:-http://localhost:5173}
+      OWNER_UNION_ID: ${OWNER_UNION_ID:-admin}
+    ports:
+      - "5173:5173"  # Frontend
+      - "3000:3000"  # Backend API
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - prop-firms-network
+    command: npm run dev
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  prop-firms-network:
+    driver: bridge

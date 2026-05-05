@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: prop-firms-app
+    runtime: node
+    plan: standard
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prop-firms-mysql
+          property: connectionString
+      - key: APP_ID
+        value: kimi-prop-firms
+      - key: APP_SECRET
+        generateValue: true
+      - key: VITE_KIMI_AUTH_URL
+        value: https://prop-firms-app.onrender.com
+      - key: VITE_APP_ID
+        value: kimi-prop-firms
+      - key: KIMI_AUTH_URL
+        value: https://prop-firms-app.onrender.com
+      - key: KIMI_OPEN_URL
+        value: https://api.kimi.com
+      - key: OWNER_UNION_ID
+        value: admin
+
+databases:
+  - name: prop-firms-mysql
+    databaseName: prop_firms_db
+    user: prop_user
+    plan: standard
+    region: ohio
